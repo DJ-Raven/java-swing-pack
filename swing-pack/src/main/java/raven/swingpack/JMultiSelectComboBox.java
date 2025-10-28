@@ -569,8 +569,7 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
         public void update() {
             if (popup.isVisible()) {
                 SwingUtilities.invokeLater(() -> {
-                    scrollPane.repaint();
-                    scrollPane.revalidate();
+                    selectView.revalidate();
                     if (getOverflowItemCount() == 0) {
                         popup.setVisible(false);
                     }
