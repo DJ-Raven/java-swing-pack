@@ -1,6 +1,6 @@
 # Swing Pack
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.dj-raven/java-swing-pack?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dj-raven/java-swing-pack)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dj-raven/swing-pack?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dj-raven/swing-pack)
 [![Stars](https://img.shields.io/github/stars/dj-raven/java-swing-pack?style=social)](https://github.com/dj-raven/java-swing-pack)
 
 **Swing Pack** is a modern Swing component library for Java desktop development.

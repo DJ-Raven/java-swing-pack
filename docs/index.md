@@ -5,7 +5,7 @@ It provides beautiful, customizable, and ready-to-use UI components with a flat,
 
 ## Installation
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.dj-raven/java-swing-pack?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dj-raven/java-swing-pack)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dj-raven/swing-pack?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dj-raven/swing-pack)
 
 Add the dependency
 
@@ -20,7 +20,7 @@ Add the dependency
 ### Snapshots
 
 To get the latest updates before the release, you can use the snapshot version
-from [Sonatype Central](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/io/github/dj-raven/java-swing-pack/)
+from [Sonatype Central](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/io/github/dj-raven/swing-pack/)
 
 ``` xml
 <repositories>
