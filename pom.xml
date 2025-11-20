@@ -6,7 +6,7 @@
 
     <groupId>io.github.dj-raven</groupId>
     <artifactId>java-swing-pack</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>swing-pack</module>
