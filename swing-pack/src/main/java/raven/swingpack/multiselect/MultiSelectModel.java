@@ -30,6 +30,9 @@ public class MultiSelectModel<E> {
     }
 
     public synchronized void addSelectedItem(Object object) {
+        if (selectedObject.contains(object)) {
+            return;
+        }
         selectedObject.addElement(object);
         int index = selectedObject.indexOf(object);
         fireItemAdded(new MultiSelectEvent(this, object, index));
