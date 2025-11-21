@@ -29,10 +29,11 @@ public class MultiSelectModel<E> {
         this.model = model;
     }
 
+    /**
+     * PERFORMANCE OPTIMIZED: Single item operations (keeps animations)
+     */
     public synchronized void addSelectedItem(Object object) {
-        if (selectedObject.contains(object)) {
-            return;
-        }
+        if (selectedObject.contains(object)) return;
         selectedObject.addElement(object);
         int index = selectedObject.indexOf(object);
         fireItemAdded(new MultiSelectEvent(this, object, index));
@@ -46,9 +47,55 @@ public class MultiSelectModel<E> {
         }
     }
 
+
+    /**
+     * BATCH OPERATIONS: For bulk data - maximum performance
+     */
+    public synchronized void addSelectedItems(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        Vector<Object> addedObjects = new Vector<>();
+        Vector<Integer> addedIndexes = new Vector<>();
+
+        for (Object object : objects) {
+            if (selectedObject.contains(object)) continue;
+            selectedObject.addElement(object);
+            int index = selectedObject.indexOf(object);
+            addedObjects.addElement(object);
+            addedIndexes.addElement(index);
+        }
+
+        if (!addedObjects.isEmpty()) {
+            int[] indexes = new int[addedIndexes.size()];
+            for (int i = 0; i < addedIndexes.size(); i++) {
+                indexes[i] = addedIndexes.get(i);
+            }
+            fireItemsAdded(new MultiSelectEvent(this, addedObjects.toArray(), indexes));
+        }
+    }
+
+
+
+
+    /**
+     * SILENT BATCH: No UI updates - fastest performance
+     * Use for initial data loading or bulk operations
+     */
+    public synchronized void addSelectedItemsSilent(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        for (Object object : objects) {
+            if (!selectedObject.contains(object)) {
+                selectedObject.addElement(object);
+            }
+        }
+        // No events fired - prevents UI repaint storms
+    }
+
     public synchronized void removeSelectedItems(Object[] objects) {
         Vector<Object> itemRemove = new Vector<>();
         Vector<Integer> indexRemove = new Vector<>();
+
         for (int i = objects.length - 1; i >= 0; i--) {
             Object item = objects[i];
             int index = selectedObject.indexOf(item);
@@ -57,14 +104,116 @@ public class MultiSelectModel<E> {
                 itemRemove.insertElementAt(item, 0);
             }
         }
+
         if (!itemRemove.isEmpty()) {
             int[] indexes = new int[indexRemove.size()];
             for (int i = 0; i < indexRemove.size(); i++) {
                 indexes[i] = indexRemove.get(i);
             }
-            fireItemRemoved(new MultiSelectEvent(this, itemRemove.toArray(), indexes));
+            fireItemsRemoved(new MultiSelectEvent(this, itemRemove.toArray(), indexes));
         }
     }
+
+    /**
+     * FORCE OPERATIONS: When you need to bypass validation
+     */
+    public synchronized void clearSelectedItemsForce() {
+        selectedObject.clear();
+        // No events fired - for testing/performance
+    }
+
+    // Silent event methods that don't trigger UI updates
+    protected void fireItemsAddedSilent(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsAddedSilent(event);
+            }
+        }
+    }
+
+    protected void fireItemsRemovedSilent(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsRemovedSilent(event);
+            }
+        }
+    }
+
+
+    // Add to MultiSelectModel.java
+    public synchronized void addItems(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        // Add items to the underlying ComboBoxModel
+        if (model instanceof DefaultComboBoxModel) {
+            DefaultComboBoxModel<E> defaultModel = (DefaultComboBoxModel<E>) model;
+            for (Object object : objects) {
+                defaultModel.addElement((E) object);
+            }
+        }
+        // Note: For other model types, you might need different implementation
+    }
+
+    public synchronized void setSelectedItems(Object[] objects) {
+        // Clear current selection and set new ones in one operation
+        Object[] currentItems = getSelectedItems();
+        int[] currentIndexes = new int[currentItems.length];
+        for (int i = 0; i < currentItems.length; i++) {
+            currentIndexes[i] = i;
+        }
+
+        selectedObject.clear();
+
+        // Add new items
+        Vector<Object> addedObjects = new Vector<>();
+        Vector<Integer> addedIndexes = new Vector<>();
+
+        for (Object object : objects) {
+            if (!selectedObject.contains(object)) {
+                selectedObject.addElement(object);
+                int index = selectedObject.indexOf(object);
+                addedObjects.addElement(object);
+                addedIndexes.addElement(index);
+            }
+        }
+
+        // Fire events
+        if (currentItems.length > 0) {
+            fireItemsRemoved(new MultiSelectEvent(this, currentItems, currentIndexes));
+        }
+        if (!addedObjects.isEmpty()) {
+            int[] indexes = new int[addedIndexes.size()];
+            for (int i = 0; i < addedIndexes.size(); i++) {
+                indexes[i] = addedIndexes.get(i);
+            }
+            fireItemsAdded(new MultiSelectEvent(this, addedObjects.toArray(), indexes));
+        }
+    }
+
+    // New batch event methods
+    protected void fireItemsAdded(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsAdded(event);
+            }
+        }
+    }
+
+    protected void fireItemsRemoved(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsRemoved(event);
+            }
+        }
+    }
+
+
+
+
 
     public void removeSelectedItemAt(int index) {
         Object object = selectedObject.get(index);

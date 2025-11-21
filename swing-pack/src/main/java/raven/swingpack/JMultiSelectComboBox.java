@@ -14,6 +14,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.util.Vector;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Raven
@@ -328,13 +330,70 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
         getMultiSelectModel().clearSelectedItems();
     }
 
+    /**
+     * SILENT BATCH OPERATIONS - Maximum performance, no UI updates
+     * Perfect for initial data loading
+     */
+    public void addSelectedItemsSilent(List<E> items) {
+        if (items == null || items.isEmpty()) return;
+
+        Object[] toAdd = items.stream()
+                .filter(item -> isItemAddable(item) && !multiSelectModel.isSelectedItem(item))
+                .toArray();
+
+        if (toAdd.length > 0) {
+            multiSelectModel.addSelectedItemsSilent(toAdd); // No events, no UI updates
+        }
+    }
+
+    /**
+     * PERFORMANCE METHODS - For testing and edge cases
+     */
+    public void clearSelectedItemsForce() {
+        multiSelectModel.clearSelectedItemsForce();
+    }
+
     public void addItem(E item, boolean selected) {
         super.addItem(item);
         if (selected) {
             addSelectedItem(item);
         }
     }
+    // Add to JMultiSelectComboBox.java
+    /**
+     * INITIALIZATION METHODS - For setting up component
+     */
+    public void addItems(List<E> items) {
+        if (items == null || items.isEmpty()) return;
 
+        if (getModel() instanceof DefaultComboBoxModel) {
+            DefaultComboBoxModel<E> model = (DefaultComboBoxModel<E>) getModel();
+            for (E item : items) {
+                model.addElement(item);
+            }
+        }
+    }
+    public void setSelectedItems(List<E> items) {
+        if (items == null) {
+            clearSelectedItems();
+            return;
+        }
+
+        List<Object> toSet = items.stream()
+                .filter(this::isItemAddable)
+                .collect(Collectors.toList());
+
+        multiSelectModel.setSelectedItems(toSet.toArray());
+    }
+
+
+    // Overload for array
+    public void addItems(E[] items) {
+        if (items == null || items.length == 0) return;
+        for (E item : items) {
+            addItem(item);
+        }
+    }
     public MultiSelectItemEditable getItemEditable() {
         return itemEditable;
     }
@@ -365,18 +424,46 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
         return multiSelectModel.isSelectedItem(item);
     }
 
+    /**
+     * SINGLE ITEM OPERATIONS - Keep animations for user interactions
+     */
     public void addSelectedItem(Object item) {
-        if (!isItemAddable(item)) {
-            return;
-        }
-        multiSelectModel.addSelectedItem(item);
+        if (!isItemAddable(item)) return;
+        multiSelectModel.addSelectedItem(item); // Preserves per-item animation
     }
 
-    public void removeSelectedItem(Object item) {
-        if (!isItemRemovable(item)) {
-            return;
+    /**
+     * BATCH OPERATIONS - For programmatic bulk updates
+     */
+    public void addSelectedItems(List<E> items) {
+        if (items == null || items.isEmpty()) return;
+
+        Object[] toAdd = items.stream()
+                .filter(item -> isItemAddable(item) && !multiSelectModel.isSelectedItem(item))
+                .toArray();
+
+        if (toAdd.length > 0) {
+            multiSelectModel.addSelectedItems(toAdd); // Single batch event
         }
-        multiSelectModel.removeSelectedItem(item);
+    }
+
+    public void removeSelectedItems(List<E> items) {
+        if (items == null || items.isEmpty()) return;
+
+        Object[] removableItems = items.stream()
+                .filter(this::isItemRemovable)
+                .toArray();
+
+        if (removableItems.length > 0) {
+            multiSelectModel.removeSelectedItems(removableItems); // Single batch event
+        }
+    }
+
+
+
+    public void removeSelectedItem(Object item) {
+        if (!isItemRemovable(item)) return;
+        multiSelectModel.removeSelectedItem(item); // Preserves per-item animation
     }
 
     public void removeSelectedItemAt(int index) {
@@ -402,10 +489,6 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
         }
     }
 
-    public void clearSelectedItemsForce() {
-        multiSelectModel.clearSelectedItems();
-    }
-
     public Object[] getSelectedItems() {
         return multiSelectModel.getSelectedItems();
     }
@@ -422,6 +505,25 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
         return multiSelectModel.getSelectedItemIndex(item);
     }
 
+    /**
+     * BATCH EVENT HANDLERS - Optimized UI updates
+     */
+    @Override
+    public void itemsAdded(MultiSelectEvent event) {
+        multiSelectEditor.updateLayout();
+        repaintPopup();
+    }
+
+    @Override
+    public void itemsRemoved(MultiSelectEvent event) {
+        multiSelectEditor.updateLayout();
+        if (overflowPopup != null) {
+            overflowPopup.update();
+        }
+        repaintPopup();
+    }
+
+    // Single item events (for backward compatibility)
     @Override
     public void itemAdded(MultiSelectEvent event) {
         multiSelectEditor.updateLayout();
@@ -449,6 +551,17 @@ public class JMultiSelectComboBox<E> extends JComboBox<E> implements MultiSelect
     @Override
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
+    }
+
+    @Override
+    public void itemsAddedSilent(MultiSelectEvent event) {
+        // No UI updates - just update the data model
+        // This is what makes it fast!
+    }
+
+    @Override
+    public void itemsRemovedSilent(MultiSelectEvent event) {
+        // No UI updates - just update the data model
     }
 
     protected int checkItemAlignment(int alignment) {

@@ -1,0 +1,1599 @@
+﻿// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\DefaultMultiSelectItemRenderer.java -----
+package raven.swingpack.multiselect;
+
+import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.ui.FlatUIUtils;
+import com.formdev.flatlaf.util.UIScale;
+import raven.swingpack.JMultiSelectComboBox;
+import raven.swingpack.multiselect.icons.ItemActionIcon;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.Area;
+import java.awt.geom.RoundRectangle2D;
+import java.util.Objects;
+
+/**
+ * @author Raven
+ */
+public class DefaultMultiSelectItemRenderer extends JLabel implements MultiSelectItemRenderer {
+
+    protected Option option;
+
+    public DefaultMultiSelectItemRenderer() {
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        initUI();
+    }
+
+    private void initUI() {
+        if (option == null) {
+            option = new Option();
+        }
+
+        if (option.removableIcon != null) {
+            option.removableIcon.updateUI();
+        }
+        option.arc = UIManager.getInt("Button.arc");
+        option.background = UIManager.getColor("Button.background");
+        option.pressedBackground = UIManager.getColor("Button.pressedBackground");
+        option.hoverBackground = UIManager.getColor("Button.hoverBackground");
+    }
+
+    @Override
+    public Component getMultiSelectItemRendererComponent(JMultiSelectComboBox<?> multiSelect, Object value, boolean isPressed, boolean hasFocus, boolean removableFocus, int index) {
+        option.multiSelect = multiSelect;
+        option.isPressed = isPressed;
+        option.hasFocus = hasFocus;
+        option.removableFocus = removableFocus;
+        option.item = value;
+        option.index = index;
+        option.removableIcon = multiSelect.getRemovableIcon();
+
+        setForeground(multiSelect.getForeground());
+        setFont(multiSelect.getFont());
+
+        setText(Objects.toString(value, ""));
+        putClientProperty(FlatClientProperties.STYLE, "border:" + getStyleInsets(multiSelect, index) + ";");
+        return this;
+    }
+
+    private Rectangle getRemovableRectangle() {
+        if (option.removableIcon == null) {
+            return null;
+        }
+        return option.removableIcon.getIconRectangle(option.multiSelect, this, getWidth(), getHeight());
+    }
+
+    private String getStyleInsets(JMultiSelectComboBox<?> comboBox, int index) {
+        Insets itemInsets = comboBox.getItemInsets();
+        if (index == -1) {
+            int bottom = (int) (option.overflowLineSize * 4) + itemInsets.left;
+            return itemInsets.top + "," + bottom + "," + itemInsets.bottom + "," + itemInsets.right;
+        }
+        int iconGap = isRemovable() ? UIScale.unscale(option.removableIcon.getWidth() + option.multiSelect.getItemRemovableTextGap()) : 0;
+        return itemInsets.top + "," + itemInsets.left + "," + itemInsets.bottom + "," + (itemInsets.right + iconGap);
+    }
+
+    private boolean isRemovable() {
+        return option.multiSelect.isShowItemRemovableIcon() && option.multiSelect.isItemRemovable(option.item);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
+            FlatUIUtils.setRenderingHints(g2);
+            int arc;
+            if (option.multiSelect.getItemArc() == 999) {
+                arc = getHeight();
+            } else {
+                arc = UIScale.scale(option.multiSelect.getItemArc() >= 0 ? option.multiSelect.getItemArc() : option.arc);
+                if (arc > getHeight()) {
+                    arc = getHeight();
+                }
+            }
+            if (option.index != -1) {
+                g2.setColor(getBackground(option.item));
+                paintItem(g2, getWidth(), getHeight(), arc);
+                if (isRemovable()) {
+                    // paint removable icon
+                    Rectangle rectangle = getRemovableRectangle();
+                    if (rectangle != null) {
+                        paintRemovableIcon(g2, rectangle);
+                    }
+                }
+            } else {
+                g2.setColor(getBackground(option.item));
+                paintOverflow(g2, getWidth(), getHeight(), arc);
+            }
+        } finally {
+            g2.dispose();
+        }
+        super.paintComponent(g);
+    }
+
+    protected void paintItem(Graphics2D g2, int width, int height, int arc) {
+        g2.fill(new RoundRectangle2D.Float(0, 0, width, height, arc, arc));
+    }
+
+    protected void paintOverflow(Graphics2D g2, int width, int height, int arc) {
+        boolean ltr = getComponentOrientation().isLeftToRight();
+        float lineSize = UIScale.scale(option.overflowLineSize);
+        float x = lineSize * 4;
+        g2.fill(new RoundRectangle2D.Double(ltr ? x : 0, 0, width - x, height, arc, arc));
+
+        g2.fill(createShape(lineSize, width, height, arc, ltr, 0));
+        g2.fill(createShape(lineSize, width, height, arc, ltr, 2));
+    }
+
+    protected void paintRemovableIcon(Graphics g, Rectangle rec) {
+        boolean pressed = option.removableFocus && option.isPressed;
+        boolean focus = option.removableFocus;
+        option.removableIcon.setColor(getRemovableIconColor(pressed, focus));
+        option.removableIcon.paintIcon(this, g, rec.x, rec.y, pressed, focus);
+    }
+
+    protected Color getBackground(Object item) {
+        if (option.isPressed && !option.removableFocus) {
+            return option.pressedBackground;
+        } else if (option.hasFocus) {
+            return option.hoverBackground;
+        } else {
+            return option.background;
+        }
+    }
+
+    protected Color getRemovableIconColor(boolean pressed, boolean focus) {
+        return null;
+    }
+
+    private Shape createShape(float lineSize, float width, float height, float arc, boolean ltr, int v) {
+        float x = lineSize * v;
+        float outerX = ltr ? x : 0f;
+        float outerW = ltr ? width : width - x;
+        float innerX = ltr ? x + lineSize : 0f;
+        float innerW = ltr ? width : width - x - lineSize;
+
+        Area area = new Area(new RoundRectangle2D.Float(outerX, 0f, outerW, height, arc, arc));
+        area.subtract(new Area(new RoundRectangle2D.Float(innerX, 0f, innerW, height, arc, arc)));
+        return area;
+    }
+
+    protected static class Option {
+
+        public JMultiSelectComboBox<?> multiSelect;
+        public float overflowLineSize = 2f;
+        public boolean isPressed;
+        public boolean hasFocus;
+        public boolean removableFocus;
+        public Object item;
+        public int index;
+
+        public ItemActionIcon removableIcon;
+        public Color background;
+        public Color pressedBackground;
+        public Color hoverBackground;
+        public int arc;
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\event\MultiSelectAdapter.java -----
+package raven.swingpack.multiselect.event;
+
+/**
+ * @author Raven
+ */
+public abstract class MultiSelectAdapter implements MultiSelectListener {
+
+    @Override
+    public void itemAdded(MultiSelectEvent event) {
+    }
+
+    @Override
+    public void itemRemoved(MultiSelectEvent event) {
+    }
+
+    @Override
+    public void itemSelected(MultiSelectEvent event) {
+    }
+
+
+    @Override
+    public void itemsAddedSilent(MultiSelectEvent event) {
+        // Default: do nothing - no UI updates
+    }
+
+    @Override
+    public void itemsRemovedSilent(MultiSelectEvent event) {
+        // Default: do nothing - no UI updates
+    }
+
+    @Override
+    public void overflowSelected(MultiSelectEvent event) {
+    }
+
+    @Override
+    public void itemsAdded(MultiSelectEvent event) {
+        // Default implementation: call itemAdded for each item for backward compatibility
+        for (int i = 0; i < event.getItems().length; i++) {
+            itemAdded(new MultiSelectEvent(event.getSource(), event.getItems()[i], event.getIndexes()[i]));
+        }
+    }
+
+    @Override
+    public void itemsRemoved(MultiSelectEvent event) {
+        // Default implementation: call itemRemoved for each item for backward compatibility
+        for (int i = 0; i < event.getItems().length; i++) {
+            itemRemoved(new MultiSelectEvent(event.getSource(), event.getItems()[i], event.getIndexes()[i]));
+        }
+    }
+
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\event\MultiSelectEvent.java -----
+package raven.swingpack.multiselect.event;
+
+import java.util.EventObject;
+
+/**
+ * @author Raven
+ */
+public class MultiSelectEvent extends EventObject {
+
+    protected Object[] items;
+    protected int[] indexes;
+
+    public MultiSelectEvent(Object source, Object item, int index) {
+        super(source);
+        this.items = new Object[]{item};
+        this.indexes = new int[]{index};
+    }
+
+    public MultiSelectEvent(Object source, Object[] items, int[] indexes) {
+        super(source);
+        this.items = items;
+        this.indexes = indexes;
+    }
+
+    public Object[] getItems() {
+        return items;
+    }
+
+    public Object getItem() {
+        if (items.length == 0) {
+            return null;
+        }
+        return items[0];
+    }
+
+    public int[] getIndexes() {
+        return indexes;
+    }
+
+    public int getIndex() {
+        if (indexes.length == 0) {
+            return -1;
+        }
+        return indexes[0];
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\event\MultiSelectListener.java -----
+package raven.swingpack.multiselect.event;
+
+import java.util.EventListener;
+
+/**
+ * @author Raven
+ */
+public interface MultiSelectListener extends EventListener {
+
+    void itemAdded(MultiSelectEvent event);
+
+    void itemRemoved(MultiSelectEvent event);
+
+    void itemSelected(MultiSelectEvent event);
+
+    void overflowSelected(MultiSelectEvent event);
+
+    void itemsAdded(MultiSelectEvent event);      // NEW: Batch addition
+
+    void itemsRemoved(MultiSelectEvent event);    // NEW: Batch removal
+
+    void itemsAddedSilent(MultiSelectEvent event);    // NEW: No UI updates
+
+    void itemsRemovedSilent(MultiSelectEvent event);  // NEW: No UI updates
+
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\icons\AbstractItemActionIcon.java -----
+package raven.swingpack.multiselect.icons;
+
+import com.formdev.flatlaf.ui.FlatUIUtils;
+import com.formdev.flatlaf.util.UIScale;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * @author Raven
+ */
+public abstract class AbstractItemActionIcon implements ItemActionIcon {
+
+    private final int width;
+    private final int height;
+    private Color color;
+
+    private Color pressedColor;
+    private Color hoverColor;
+    private Color defaultColor;
+
+    public AbstractItemActionIcon(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    @Override
+    public final void paintIcon(Component com, Graphics g, int x, int y, boolean pressed, boolean focus) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
+            FlatUIUtils.setRenderingHints(g2);
+            g2.translate(x, y);
+            UIScale.scaleGraphics(g2);
+
+            g2.setColor(getColor(pressed, focus));
+            paintIcon(com, g2, pressed, focus);
+        } finally {
+            g2.dispose();
+        }
+    }
+
+    protected abstract void paintIcon(Component com, Graphics2D g, boolean pressed, boolean focus);
+
+    @Override
+    public Color getColor() {
+        return color;
+    }
+
+    public Color getColor(boolean pressed, boolean focus) {
+        if (getColor() != null) {
+            return getColor();
+        }
+
+        if (pressed) {
+            return pressedColor;
+        } else if (focus) {
+            return hoverColor;
+        }
+        return defaultColor;
+    }
+
+    @Override
+    public void updateUI() {
+        pressedColor = UIManager.getColor("SearchField.clearIconPressedColor");
+        hoverColor = UIManager.getColor("SearchField.clearIconHoverColor");
+        defaultColor = UIManager.getColor("SearchField.clearIconColor");
+    }
+
+    @Override
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    @Override
+    public int getWidth() {
+        return UIScale.scale(width);
+    }
+
+    @Override
+    public int getHeight() {
+        return UIScale.scale(height);
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\icons\CheckmarkIcon.java -----
+package raven.swingpack.multiselect.icons;
+
+import com.formdev.flatlaf.icons.FlatCheckBoxMenuItemIcon;
+
+import java.awt.*;
+
+/**
+ * @author Raven
+ */
+public class CheckmarkIcon extends FlatCheckBoxMenuItemIcon {
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
+    public boolean isHasFocus() {
+        return hasFocus;
+    }
+
+    public void setHasFocus(boolean hasFocus) {
+        this.hasFocus = hasFocus;
+    }
+
+    private boolean selected;
+    private boolean hasFocus;
+
+    @Override
+    protected void paintIcon(Component c, Graphics2D g2) {
+        if (isSelected()) {
+            g2.setColor(getCheckmarkColor(c));
+            paintCheckmark(g2);
+        }
+    }
+
+    @Override
+    protected Color getCheckmarkColor(Component c) {
+        if (isHasFocus()) {
+            return selectionForeground;
+        }
+        return checkmarkColor;
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\icons\DefaultRemovableIcon.java -----
+package raven.swingpack.multiselect.icons;
+
+import com.formdev.flatlaf.ui.FlatUIUtils;
+import com.formdev.flatlaf.util.UIScale;
+import raven.swingpack.JMultiSelectComboBox;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
+
+/**
+ * @author Raven
+ */
+public class DefaultRemovableIcon extends AbstractItemActionIcon {
+
+    public DefaultRemovableIcon() {
+        super(16, 16);
+    }
+
+    @Override
+    protected void paintIcon(Component com, Graphics2D g, boolean pressed, boolean focus) {
+        Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
+        path.append(new Ellipse2D.Float(1.75f, 1.75f, 12.5f, 12.5f), false);
+        path.append(FlatUIUtils.createPath(4.5, 5.5, 5.5, 4.5, 8, 7, 10.5, 4.5, 11.5, 5.5, 9, 8, 11.5, 10.5, 10.5, 11.5, 8, 9, 5.5, 11.5, 4.5, 10.5, 7, 8), false);
+        g.fill(path);
+    }
+
+    @Override
+    public Rectangle getIconRectangle(JMultiSelectComboBox<?> multiSelect, Component com, int width, int height) {
+        int iw = getWidth();
+        int ih = getHeight();
+        boolean ltr = multiSelect.getComponentOrientation().isLeftToRight();
+        Insets insets;
+        if (com instanceof JComponent) {
+            insets = ((JComponent) com).getInsets();
+        } else {
+            insets = new Insets(0, 0, 0, 0);
+        }
+        int gap = UIScale.scale(multiSelect.getItemRemovableTextGap() + getExtraGap());
+        int w = width - (insets.left + insets.right);
+        int h = height - (insets.top + insets.bottom);
+        int x = ltr ? insets.left + w + gap : (insets.left - iw - gap);
+        int y = insets.top + (h - ih) / 2;
+        return new Rectangle(x, y, iw, ih);
+    }
+
+    protected int getExtraGap() {
+        // extra gap apply without effect component size
+        return 3;
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\icons\ItemActionIcon.java -----
+package raven.swingpack.multiselect.icons;
+
+import raven.swingpack.JMultiSelectComboBox;
+
+import java.awt.*;
+
+/**
+ * @author Raven
+ */
+public interface ItemActionIcon {
+
+    void paintIcon(Component com, Graphics g, int x, int y, boolean pressed, boolean focus);
+
+    Color getColor();
+
+    void setColor(Color color);
+
+    void updateUI();
+
+    int getWidth();
+
+    int getHeight();
+
+    Rectangle getIconRectangle(JMultiSelectComboBox<?> multiSelect, Component com, int width, int height);
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\MultiSelectCellRenderer.java -----
+package raven.swingpack.multiselect;
+
+import raven.swingpack.JMultiSelectComboBox;
+import raven.swingpack.multiselect.icons.CheckmarkIcon;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * @author Raven
+ */
+public class MultiSelectCellRenderer extends DefaultListCellRenderer {
+
+    public void initMultiSelect(JMultiSelectComboBox<?> multiSelect) {
+        this.multiSelect = multiSelect;
+    }
+
+    protected JMultiSelectComboBox<?> multiSelect;
+    private CheckmarkIcon checkmarkIcon;
+
+    public MultiSelectCellRenderer() {
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        initUI();
+    }
+
+    private void initUI() {
+        checkmarkIcon = new CheckmarkIcon();
+    }
+
+    @Override
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        boolean isItemSelected = isItemSelected(value);
+        Icon icon = getSelectedIcon(value, index, isItemSelected, isSelected, cellHasFocus);
+        setEnabled(isItemEditable(value));
+        if (isEnabled()) {
+            setIcon(icon);
+        } else {
+            setDisabledIcon(icon);
+        }
+        return this;
+    }
+
+    protected boolean isItemEditable(Object value) {
+        boolean isItemSelected = isItemSelected(value);
+        boolean editable;
+        if (isItemSelected) {
+            editable = multiSelect.isItemRemovable(value);
+        } else {
+            editable = multiSelect.isItemAddable(value);
+        }
+        return editable;
+    }
+
+    protected Icon getSelectedIcon(Object value, int index, boolean isItemSelected, boolean isSelected, boolean cellHasFocus) {
+        checkmarkIcon.setSelected(isItemSelected);
+        checkmarkIcon.setHasFocus(isSelected);
+        return checkmarkIcon;
+    }
+
+    protected boolean isItemSelected(Object value) {
+        if (multiSelect == null) return false;
+
+        return multiSelect.isSelectedItem(value);
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\MultiSelectItemEditable.java -----
+package raven.swingpack.multiselect;
+
+/**
+ * @author Raven
+ */
+public interface MultiSelectItemEditable {
+
+    boolean isItemAddable(Object item);
+
+    boolean isItemRemovable(Object item);
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\MultiSelectItemRenderer.java -----
+package raven.swingpack.multiselect;
+
+import raven.swingpack.JMultiSelectComboBox;
+
+import java.awt.*;
+
+/**
+ * @author Raven
+ */
+public interface MultiSelectItemRenderer {
+
+    Component getMultiSelectItemRendererComponent(JMultiSelectComboBox<?> multiSelect, Object value, boolean isPressed, boolean hasFocus, boolean removableFocus, int index);
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\MultiSelectModel.java -----
+package raven.swingpack.multiselect;
+
+import raven.swingpack.multiselect.event.MultiSelectEvent;
+import raven.swingpack.multiselect.event.MultiSelectListener;
+
+import javax.swing.*;
+import javax.swing.event.EventListenerList;
+import java.util.Vector;
+
+/**
+ * @author Raven
+ */
+public class MultiSelectModel<E> {
+
+    protected EventListenerList listenerList = new EventListenerList();
+    private ComboBoxModel<E> model;
+    private final Vector<Object> selectedObject;
+
+    public MultiSelectModel(ComboBoxModel<E> model) {
+        this.model = model;
+        selectedObject = new Vector<>();
+    }
+
+    public ComboBoxModel<E> getModel() {
+        return model;
+    }
+
+    public void setModel(ComboBoxModel<E> model) {
+        this.model = model;
+    }
+
+    public synchronized void addSelectedItem(Object object) {
+        if (selectedObject.contains(object)) {
+            return;
+        }
+        selectedObject.addElement(object);
+        int index = selectedObject.indexOf(object);
+        fireItemAdded(new MultiSelectEvent(this, object, index));
+    }
+
+
+    /**
+     * Batch add items without firing individual events - for performance
+     */
+    public synchronized void addSelectedItems(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        Vector<Object> addedObjects = new Vector<>();
+        Vector<Integer> addedIndexes = new Vector<>();
+
+        for (Object object : objects) {
+            if (selectedObject.contains(object)) {
+                continue;
+            }
+            selectedObject.addElement(object);
+            int index = selectedObject.indexOf(object);
+            addedObjects.addElement(object);
+            addedIndexes.addElement(index);
+        }
+
+        if (!addedObjects.isEmpty()) {
+            int[] indexes = new int[addedIndexes.size()];
+            for (int i = 0; i < addedIndexes.size(); i++) {
+                indexes[i] = addedIndexes.get(i);
+            }
+            fireItemsAdded(new MultiSelectEvent(this, addedObjects.toArray(), indexes));
+        }
+    }
+
+    // In MultiSelectModel.java - Add these methods
+    public synchronized void addSelectedItemsSilent(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        for (Object object : objects) {
+            if (!selectedObject.contains(object)) {
+                selectedObject.addElement(object);
+            }
+        }
+        // No events fired - this is what makes it fast and non-blocking
+    }
+
+    public synchronized void removeSelectedItemsSilent(Object[] objects) {
+        Vector<Object> itemRemove = new Vector<>();
+        Vector<Integer> indexRemove = new Vector<>();
+
+        for (int i = objects.length - 1; i >= 0; i--) {
+            Object item = objects[i];
+            int index = selectedObject.indexOf(item);
+            if (selectedObject.removeElement(item)) {
+                indexRemove.insertElementAt(index, 0);
+                itemRemove.insertElementAt(item, 0);
+            }
+        }
+
+        if (!itemRemove.isEmpty()) {
+            int[] indexes = new int[indexRemove.size()];
+            for (int i = 0; i < indexRemove.size(); i++) {
+                indexes[i] = indexRemove.get(i);
+            }
+            fireItemsRemovedSilent(new MultiSelectEvent(this, itemRemove.toArray(), indexes));
+        }
+    }
+
+    // Silent event methods that don't trigger UI updates
+    protected void fireItemsAddedSilent(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsAddedSilent(event);
+            }
+        }
+    }
+
+    protected void fireItemsRemovedSilent(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsRemovedSilent(event);
+            }
+        }
+    }
+
+
+    // Add to MultiSelectModel.java
+    public synchronized void addItems(Object[] objects) {
+        if (objects == null || objects.length == 0) return;
+
+        // Add items to the underlying ComboBoxModel
+        if (model instanceof DefaultComboBoxModel) {
+            DefaultComboBoxModel<E> defaultModel = (DefaultComboBoxModel<E>) model;
+            for (Object object : objects) {
+                defaultModel.addElement((E) object);
+            }
+        }
+        // Note: For other model types, you might need different implementation
+    }
+    public synchronized void removeSelectedItems(Object[] objects) {
+        Vector<Object> itemRemove = new Vector<>();
+        Vector<Integer> indexRemove = new Vector<>();
+
+        for (int i = objects.length - 1; i >= 0; i--) {
+            Object item = objects[i];
+            int index = selectedObject.indexOf(item);
+            if (selectedObject.removeElement(item)) {
+                indexRemove.insertElementAt(index, 0);
+                itemRemove.insertElementAt(item, 0);
+            }
+        }
+
+        if (!itemRemove.isEmpty()) {
+            int[] indexes = new int[indexRemove.size()];
+            for (int i = 0; i < indexRemove.size(); i++) {
+                indexes[i] = indexRemove.get(i);
+            }
+            fireItemsRemoved(new MultiSelectEvent(this, itemRemove.toArray(), indexes));
+        }
+    }
+
+    public synchronized void setSelectedItems(Object[] objects) {
+        // Clear current selection and set new ones in one operation
+        Object[] currentItems = getSelectedItems();
+        int[] currentIndexes = new int[currentItems.length];
+        for (int i = 0; i < currentItems.length; i++) {
+            currentIndexes[i] = i;
+        }
+
+        selectedObject.clear();
+
+        // Add new items
+        Vector<Object> addedObjects = new Vector<>();
+        Vector<Integer> addedIndexes = new Vector<>();
+
+        for (Object object : objects) {
+            if (!selectedObject.contains(object)) {
+                selectedObject.addElement(object);
+                int index = selectedObject.indexOf(object);
+                addedObjects.addElement(object);
+                addedIndexes.addElement(index);
+            }
+        }
+
+        // Fire events
+        if (currentItems.length > 0) {
+            fireItemsRemoved(new MultiSelectEvent(this, currentItems, currentIndexes));
+        }
+        if (!addedObjects.isEmpty()) {
+            int[] indexes = new int[addedIndexes.size()];
+            for (int i = 0; i < addedIndexes.size(); i++) {
+                indexes[i] = addedIndexes.get(i);
+            }
+            fireItemsAdded(new MultiSelectEvent(this, addedObjects.toArray(), indexes));
+        }
+    }
+
+    // New batch event methods
+    protected void fireItemsAdded(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsAdded(event);
+            }
+        }
+    }
+
+    protected void fireItemsRemoved(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemsRemoved(event);
+            }
+        }
+    }
+
+
+
+    public synchronized void removeSelectedItem(Object object) {
+        int index = selectedObject.indexOf(object);
+        boolean act = selectedObject.removeElement(object);
+        if (act) {
+            fireItemRemoved(new MultiSelectEvent(this, object, index));
+        }
+    }
+    public synchronized void clearSelectedItemsForce() {
+        selectedObject.clear();
+        // No events fired
+    }
+
+
+    public void removeSelectedItemAt(int index) {
+        Object object = selectedObject.get(index);
+        removeSelectedItem(object);
+    }
+
+    public synchronized void clearSelectedItems() {
+        if (getSelectedItemCount() > 0) {
+            Object[] items = getSelectedItems();
+            int[] indexes = new int[items.length];
+            for (int i = 0; i < items.length; i++) {
+                indexes[i] = i;
+            }
+            selectedObject.clear();
+            fireItemRemoved(new MultiSelectEvent(this, items, indexes));
+        }
+    }
+
+    public Object[] getSelectedItems() {
+        return selectedObject.toArray();
+    }
+
+    public Object getSelectedItemAt(int index) {
+        return selectedObject.get(index);
+    }
+
+    public int getSelectedItemIndex(Object item) {
+        return selectedObject.indexOf(item);
+    }
+
+    public int getSelectedItemCount() {
+        return selectedObject.size();
+    }
+
+    public boolean isSelectedItem(Object object) {
+        return selectedObject.contains(object);
+    }
+
+    public void addEventListener(MultiSelectListener listener) {
+        listenerList.add(MultiSelectListener.class, listener);
+    }
+
+    public void removeEventListener(MultiSelectListener listener) {
+        listenerList.remove(MultiSelectListener.class, listener);
+    }
+
+    protected void fireItemAdded(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemAdded(event);
+            }
+        }
+    }
+
+    protected void fireItemRemoved(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemRemoved(event);
+            }
+        }
+    }
+
+    protected void fireItemSelected(int index) {
+        Object object = selectedObject.get(index);
+        if (object != null) {
+            fireItemSelected(new MultiSelectEvent(this, object, index));
+        }
+    }
+
+    protected void fireOverflowSelected(int itemCount) {
+        Object[] items = getItemTo(itemCount);
+        int[] indexes = new int[items.length];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        fireOverflowSelected(new MultiSelectEvent(this, items, indexes));
+    }
+
+    protected Object[] getItemTo(int itemCount) {
+        if (itemCount == 0) {
+            return null;
+        }
+        Object[] items = new Object[itemCount];
+        for (int i = 0; i < getSelectedItemCount(); i++) {
+            items[i] = selectedObject.get(i);
+            if (i == itemCount - 1) {
+                break;
+            }
+        }
+        return items;
+    }
+
+    protected void fireItemSelected(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).itemSelected(event);
+            }
+        }
+    }
+
+    protected void fireOverflowSelected(MultiSelectEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == MultiSelectListener.class) {
+                ((MultiSelectListener) listeners[i + 1]).overflowSelected(event);
+            }
+        }
+    }
+}
+
+
+// ----- File: F:\documents\Swing projects\java-swing-pack\swing-pack\src\main\java\raven\swingpack\multiselect\MultiSelectView.java -----
+package raven.swingpack.multiselect;
+
+import com.formdev.flatlaf.util.UIScale;
+import raven.swingpack.JMultiSelectComboBox;
+import raven.swingpack.util.SwingPackUtils;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Raven
+ */
+public class MultiSelectView extends JComponent implements Scrollable {
+
+    private final JMultiSelectComboBox<?> multiSelect;
+    private final WrapLayoutSize wrapLayout;
+    private final List<ShapeWithIndex> listRectangle;
+    private final CellRendererPane rendererPane;
+
+    private int pressedIndex = -2;
+    private int focusIndex = -2;
+    private int removablePressedIndex = -2;
+    private int removableFocusIndex = -2;
+
+    private final boolean forOverflow;
+
+    public MultiSelectView(JMultiSelectComboBox<?> multiSelect) {
+        this(multiSelect, false);
+    }
+
+    public MultiSelectView(JMultiSelectComboBox<?> multiSelect, boolean forOverflow) {
+        this.multiSelect = multiSelect;
+        this.wrapLayout = new WrapLayoutSize();
+        this.listRectangle = new ArrayList<>();
+        this.rendererPane = new CellRendererPane();
+        this.forOverflow = forOverflow;
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    multiSelect.grabFocus();
+                    onPressed(e.getPoint());
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Point point = e.getPoint();
+                    int index = getRemovableIndexAt(point);
+                    boolean checkPressed = true;
+                    if (multiSelect.isShowItemRemovableIcon()) {
+                        if (index >= 0) {
+                            if (index == removableFocusIndex) {
+                                multiSelect.removeSelectedItemAt(index);
+                            }
+                            checkPressed = false;
+                        } else {
+                            checkPressed = removableFocusIndex < 0;
+                        }
+                        removableFocusIndex = index;
+                    }
+                    index = getIndexAt(point);
+                    if (index != -2) {
+                        if (checkPressed) {
+                            if (index == pressedIndex) {
+                                if (index == -1) {
+                                    int overflowCount = getOverflowItemCount();
+                                    if (overflowCount > 0) {
+                                        multiSelect.getMultiSelectModel().fireOverflowSelected(overflowCount);
+                                    }
+                                } else {
+                                    multiSelect.getMultiSelectModel().fireItemSelected(index);
+                                }
+                            }
+                        }
+                    }
+
+                    focusIndex = -2;
+                    pressedIndex = -2;
+                    removableFocusIndex = -2;
+                    removablePressedIndex = -2;
+
+                    SwingUtilities.invokeLater(() -> {
+                        onFocus(point);
+                        repaint();
+                    });
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                onFocus(e.getPoint());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                boolean paint = false;
+                if (pressedIndex == -2) {
+                    focusIndex = -2;
+                    paint = true;
+                }
+                if (removablePressedIndex == -2) {
+                    removableFocusIndex = -2;
+                    paint = true;
+                }
+                if (paint) {
+                    repaint();
+                }
+            }
+
+            private void onFocus(Point point) {
+                int index = getIndexAt(point);
+                boolean paint = false;
+                if (focusIndex != index) {
+                    focusIndex = index;
+                    paint = true;
+                }
+                if (multiSelect.isShowItemRemovableIcon()) {
+                    if (index >= 0) {
+                        index = getRemovableIndexAt(point);
+                        if (index != removableFocusIndex) {
+                            removableFocusIndex = index;
+                            paint = true;
+                        }
+                    }
+                } else {
+                    removableFocusIndex = -2;
+                }
+                if (paint) {
+                    repaint();
+                }
+            }
+
+            private void onPressed(Point point) {
+                int index = getIndexAt(point);
+                boolean paint = false;
+                if (pressedIndex != index) {
+                    pressedIndex = index;
+                    paint = true;
+                }
+                if (index >= 0) {
+                    index = getRemovableIndexAt(point);
+                    if (removablePressedIndex != index) {
+                        removablePressedIndex = index;
+                        paint = true;
+                    }
+                }
+                if (paint) {
+                    repaint();
+                }
+            }
+        };
+        addMouseListener(mouseAdapter);
+        addMouseMotionListener(mouseAdapter);
+    }
+
+    private int getIndexAt(Point point) {
+        for (ShapeWithIndex s : listRectangle) {
+            if (s.rectangle.contains(point)) {
+                return s.index;
+            }
+        }
+        return -2;
+    }
+
+    private int getRemovableIndexAt(Point point) {
+        for (ShapeWithIndex s : listRectangle) {
+            if (s.removableRectangle != null && s.removableRectangle.contains(point)) {
+                return s.index;
+            }
+        }
+        return -2;
+    }
+
+    public int getOverflowItemCount() {
+        if (listRectangle.isEmpty()) {
+            return 0;
+        }
+        if (listRectangle.get(0).index != -1) {
+            return 0;
+        }
+        if (listRectangle.size() == 1) {
+            return multiSelect.getSelectedItemCount();
+        }
+        return listRectangle.get(1).index;
+    }
+
+    public Object[] getOverflowItems() {
+        return multiSelect.getMultiSelectModel().getItemTo(getOverflowItemCount());
+    }
+
+    public Rectangle getRectangleAt(int index, boolean includeSpacing) {
+        if (index < -1 || index >= listRectangle.size()) {
+            return null;
+        }
+        for (ShapeWithIndex s : listRectangle) {
+
+            if (s.index == index) {
+                Rectangle rec = new Rectangle(s.rectangle);
+                if (includeSpacing) {
+                    int gap = scale(multiSelect.getItemGap());
+                    rec.grow(gap, gap);
+                }
+                return rec;
+            }
+        }
+        return null;
+    }
+
+    public void scrollTo(int index) {
+        if (multiSelect.getDisplayMode() != JMultiSelectComboBox.DisplayMode.WRAP_SCROLL) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            Rectangle rec = getRectangleAt(index, true);
+            if (rec != null) {
+                scrollRectToVisible(rec);
+            }
+        });
+    }
+
+    private int getItemAlignment() {
+        int alignment = multiSelect.getItemAlignment();
+        boolean ltr = multiSelect.getComponentOrientation().isLeftToRight();
+        return alignment == SwingConstants.LEADING ? (ltr ? SwingConstants.LEFT : SwingConstants.RIGHT)
+                : alignment == SwingConstants.TRAILING ? (ltr ? SwingConstants.RIGHT : SwingConstants.LEFT)
+                : alignment;
+    }
+
+    private Object[] getItems() {
+        if (forOverflow) {
+            return multiSelect.getOverflowItems();
+        }
+        return multiSelect.getSelectedItems();
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (forOverflow || multiSelect.getDisplayMode() == JMultiSelectComboBox.DisplayMode.WRAP_SCROLL) {
+            Object[] items = getItems();
+            if (items == null || items.length == 0) {
+                return getMinimumLayoutSize();
+            }
+            Insets insets = scale(multiSelect.getItemContainerInsets());
+            int gap = scale(multiSelect.getItemGap());
+            wrapLayout.init(getItemAlignment(), insets, getWidth(), getHeight(), gap);
+            for (int i = 0; i < items.length; i++) {
+                Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, items[i], pressedIndex == i, focusIndex == i, removableFocusIndex == i, i);
+                Dimension size = com.getPreferredSize();
+                wrapLayout.add(size);
+            }
+            return wrapLayout.getMaxSize();
+        }
+        return getMinimumLayoutSize();
+    }
+
+    public Dimension getMinimumLayoutSize() {
+        Insets insets = scale(multiSelect.getItemContainerInsets());
+        Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, 0, false, false, false, -1);
+        Dimension size = com.getPreferredSize();
+        int row = getRow();
+        if (row > 0) {
+            int gap = scale(multiSelect.getItemGap());
+            size.height = size.height * row + (row > 1 ? (row - 1) * gap : 0);
+        }
+        size.width += insets.left + insets.right;
+        size.height += insets.top + insets.bottom;
+        return size;
+    }
+
+    public int getRow() {
+        return forOverflow ? multiSelect.getOverflowPopupItemRow() : multiSelect.getRow();
+    }
+
+    public Point getOverflowPopupLocation() {
+        Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, 0, false, false, false, -1);
+        Dimension size = com.getPreferredSize();
+        boolean isLeft = getItemAlignment() == SwingConstants.LEFT;
+        Insets insets = scale(multiSelect.getItemContainerInsets());
+        int x = isLeft ? insets.left : (getWidth() - insets.right);
+        int y = insets.top + size.height;
+        if (!isLeft) {
+            x -= scale(multiSelect.getOverflowPopupSize().width);
+        }
+        return new Point(x, y);
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        paintImpl(g);
+    }
+
+    private void paintImpl(Graphics g) {
+        Insets insets = scale(multiSelect.getItemContainerInsets());
+        int width = getWidth() - (insets.left + insets.right);
+        int height = getHeight() - (insets.top + insets.bottom);
+        if (width == 0 || height == 0) {
+            listRectangle.clear();
+            return;
+        }
+        int gap = scale(multiSelect.getItemGap());
+        Object[] selectedItem = getItems();
+        Object[] items = getItemDisplay(selectedItem, insets, gap);
+        if (items == null) {
+            return;
+        }
+        int diff = selectedItem.length - items.length;
+        Shape clip = g.getClip();
+        listRectangle.clear();
+        wrapLayout.init(getItemAlignment(), insets, getWidth(), getHeight(), gap);
+        int index = diff > 0 ? -1 : 0;
+        int itemIndex = diff > 0 ? diff - 1 : 0;
+        for (int i = index; i < items.length; i++) {
+            Object value = index == -1 ? diff : items[index];
+            int rendererIndex = index == -1 ? -1 : itemIndex;
+            Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, value, pressedIndex == rendererIndex, focusIndex == rendererIndex, removableFocusIndex == rendererIndex, rendererIndex);
+            Dimension size = com.getPreferredSize();
+            Rectangle rec = wrapLayout.add(size);
+            Rectangle removableRec = null;
+            if (index >= 0 && multiSelect.isShowItemRemovableIcon() && multiSelect.isItemRemovable(value)) {
+                removableRec = multiSelect.getRemovableIcon() == null ? null :
+                        multiSelect.getRemovableIcon().getIconRectangle(multiSelect, com, rec.width, rec.height);
+                if (removableRec != null) {
+                    removableRec.x += rec.x;
+                    removableRec.y += rec.y;
+                }
+            }
+            listRectangle.add(new ShapeWithIndex(rec, removableRec, rendererIndex));
+            if (clip == null || clip.intersects(rec)) {
+                if (!multiSelect.isNoVisualPadding()) {
+                    SwingPackUtils.applyVisualPadding(com, rec);
+                }
+                rendererPane.paintComponent(g, com, this, rec);
+            }
+            index++;
+            itemIndex++;
+        }
+        rendererPane.removeAll();
+    }
+
+    private Object[] getItemDisplay(Object[] items, Insets insets, int gap) {
+        if (forOverflow) {
+            return multiSelect.getOverflowItems();
+        }
+
+        if (multiSelect.getDisplayMode() == JMultiSelectComboBox.DisplayMode.WRAP_SCROLL) {
+            return items;
+        }
+        List<Object> display = new ArrayList<>();
+        wrapLayout.init(getItemAlignment(), insets, getWidth(), getHeight(), gap);
+        for (int i = items.length - 1; i >= 0; i--) {
+            Object item = items[i];
+            Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, item, false, false, false, i);
+            Dimension size = com.getPreferredSize();
+            Rectangle rec = wrapLayout.add(size);
+            boolean isOverflow = wrapLayout.isOverflow(rec);
+            if (wrapLayout.getRow() != 0 && isOverflow) {
+                wrapLayout.removeLast();
+                break;
+            }
+            display.add(0, item);
+        }
+        int diff = items.length - display.size();
+        if (diff > 0) {
+            // check for overflow label space
+            while (!display.isEmpty()) {
+                Component com = multiSelect.getItemRenderer().getMultiSelectItemRendererComponent(multiSelect, diff, false, false, false, -1);
+                Dimension size = com.getPreferredSize();
+                Rectangle rec = wrapLayout.addTemp(size);
+                if (wrapLayout.isOverflow(rec)) {
+                    display.remove(0);
+                    wrapLayout.removeLast();
+                    diff++;
+                } else {
+                    break;
+                }
+            }
+        }
+        return display.toArray();
+    }
+
+    protected int scale(int value) {
+        return UIScale.scale(value);
+    }
+
+    protected Insets scale(Insets insets) {
+        return UIScale.scale(insets);
+    }
+
+    private WrapLayoutSize.RectangleRowColumn locationToRectangle(Point point) {
+        return wrapLayout.getRectangleAtPoint(point.x, point.y);
+    }
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+        return null;
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return calculateScrollIncrement(visibleRect, orientation, direction);
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return calculateScrollIncrement(visibleRect, orientation, direction);
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        return true;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+        return false;
+    }
+
+    private int calculateScrollIncrement(Rectangle visibleRect, int orientation, int direction) {
+        WrapLayoutSize.RectangleRowColumn rec = locationToRectangle(visibleRect.getLocation());
+        if (rec == null) {
+            return 0;
+        }
+        Rectangle r = rec.rectangle;
+        int row = rec.row;
+        int gap = scale(multiSelect.getItemGap());
+        int top = scale(multiSelect.getItemContainerInsets().top);
+        if (orientation == SwingConstants.VERTICAL) {
+            if (direction > 0) {
+                // scroll down
+                return r.height - (visibleRect.y - r.y);
+            } else {
+                // scroll up
+                if ((r.y == visibleRect.y + top) && (row == 0)) {
+                    return 0;
+                }
+                if (r.y == visibleRect.y + gap) {
+                    Point loc = r.getLocation();
+                    loc.y -= gap + 1;
+                    WrapLayoutSize.RectangleRowColumn prevRec = locationToRectangle(loc);
+                    if (prevRec == null) {
+                        return 0;
+                    }
+                    row = prevRec.row;
+                    if (prevRec.rectangle.y >= r.y) {
+                        return 0;
+                    }
+                    return prevRec.rectangle.height + (row == 0 ? top : gap);
+                }
+                return visibleRect.y - r.y + (row == 0 ? top : gap);
+            }
+        }
+        return 0;
+    }
+
+    private static class ShapeWithIndex {
+
+        public ShapeWithIndex(Rectangle rectangle, Rectangle removableRectangle, int index) {
+            this.rectangle = rectangle;
+            this.removableRectangle = removableRectangle;
+            this.index = index;
+        }
+
+        final Rectangle rectangle;
+        final Rectangle removableRectangle;
+        final int index;
+    }
+
+    private static class WrapLayoutSize {
+
+        private final List<RectangleRowColumn> rectangles;
+        private int alignment;
+        private Insets insets;
+        private int width;
+        private int height;
+        private int gap;
+
+        public WrapLayoutSize() {
+            this.rectangles = new ArrayList<>();
+        }
+
+        public void init(int alignment, Insets insets, int width, int height, int gap) {
+            rectangles.clear();
+            this.alignment = alignment;
+            this.insets = insets;
+            this.width = width - (insets.left + insets.right);
+            this.height = height - (insets.top + insets.bottom);
+            this.gap = gap;
+        }
+
+        public Rectangle addTemp(Dimension size) {
+            Rectangle rec = add(size);
+            removeLast();
+            return rec;
+        }
+
+        public Rectangle add(Dimension size) {
+            return addImpl(size.width, size.height);
+        }
+
+        private Rectangle addImpl(int w, int h) {
+            if (w > width) {
+                w = width;
+            }
+            boolean isLeft = alignment == SwingConstants.LEFT;
+            int x;
+            int y;
+            if (!rectangles.isEmpty()) {
+                Rectangle rec = rectangles.get(rectangles.size() - 1).rectangle;
+                x = isLeft ? (rec.x + rec.width + gap) : rec.x - (w + gap);
+                y = rec.y;
+            } else {
+                x = isLeft ? insets.left : insets.left + width - w;
+                y = insets.top;
+            }
+            int row = Math.max(getRow(), 0);
+            int column = getColumn();
+            if (column > -1 && (isLeft && x + w > width) || (!isLeft && x < insets.left)) {
+                x = isLeft ? insets.left : insets.left + width - w;
+                y += getMacRowHeight(row) + gap;
+                row++;
+                column = 0;
+            } else {
+                column++;
+            }
+            rectangles.add(new RectangleRowColumn(new Rectangle(x, y, w, h), row, column));
+            return new Rectangle(x, y, w, h);
+        }
+
+        public Dimension getMaxSize() {
+            int width = insets.left + insets.right;
+            int height = insets.top + insets.bottom;
+            if (!rectangles.isEmpty()) {
+                Rectangle rec = rectangles.get(rectangles.size() - 1).rectangle;
+                width = rec.x + rec.width + insets.right;
+                height = rec.y + rec.height + insets.bottom;
+            }
+            return new Dimension(width, height);
+        }
+
+        public boolean isOverflow(Rectangle rec) {
+            int maxWidth = insets.left + width;
+            int maxHeight = insets.top + height;
+            return rec.x + rec.width > maxWidth || rec.y + rec.height > maxHeight;
+        }
+
+        public void removeLast() {
+            if (!rectangles.isEmpty()) {
+                rectangles.remove(rectangles.size() - 1);
+            }
+        }
+
+        public RectangleRowColumn getRectangleAtPoint(int x, int y) {
+            if (rectangles.isEmpty()) {
+                return null;
+            }
+            for (RectangleRowColumn rec : rectangles) {
+                if (rec.rectangle.y >= y || rec.rectangle.y + rec.rectangle.height > y) {
+                    return rec;
+                }
+            }
+            return null;
+        }
+
+        public int getRow() {
+            if (rectangles.isEmpty()) {
+                return -1;
+            }
+            return rectangles.get(rectangles.size() - 1).row;
+        }
+
+        public int getColumn() {
+            if (rectangles.isEmpty()) {
+                return -1;
+            }
+            return rectangles.get(rectangles.size() - 1).column;
+        }
+
+        public int getMacRowHeight(int row) {
+            if (rectangles.isEmpty()) {
+                return 0;
+            }
+            boolean found = false;
+            int height = 0;
+            for (int i = rectangles.size() - 1; i >= 0; i--) {
+                RectangleRowColumn rec = rectangles.get(i);
+                if (rec.row == row) {
+                    height = Math.max(height, rec.rectangle.height);
+                    found = true;
+                } else if (found) {
+                    break;
+                }
+            }
+            return height;
+        }
+
+        private static class RectangleRowColumn {
+
+            public RectangleRowColumn(Rectangle rectangle, int row, int column) {
+                this.rectangle = rectangle;
+                this.row = row;
+                this.column = column;
+            }
+
+            private final Rectangle rectangle;
+            private final int row;
+            private final int column;
+        }
+    }
+}
+
+
