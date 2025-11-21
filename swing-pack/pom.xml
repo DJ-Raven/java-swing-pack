@@ -43,7 +43,8 @@
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
-            <version>3.6.2</version>
+            <version>3.6</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.formdev</groupId>
