@@ -10,6 +10,7 @@ import raven.swingpack.testing.BaseFrame;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.Arrays;
 
 public class TestMultiSelect extends BaseFrame {
 
@@ -57,9 +58,14 @@ public class TestMultiSelect extends BaseFrame {
                 return item != "Pomegranate";
             }
         });
-        for (String item : items) {
-            multiSelect.addItem(item, true);
-        }
+        // DOLAMASA1 UPDATE: Using batch operation instead of individual adds
+        // Old way: for (String item : items) { multiSelect.addItem(item, true); }
+        // New way: Much better performance with single event
+   //     for (String item : items) {
+   //        multiSelect.addItem(item); // Add to model without selecting
+   //   }
+        multiSelect.addItems(items);
+        multiSelect.addSelectedItems(Arrays.asList(items)); // Batch select all
 
         multiSelect.setRow(3);
         panel.add(multiSelect);
