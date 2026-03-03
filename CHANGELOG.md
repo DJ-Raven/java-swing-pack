@@ -7,6 +7,10 @@
 - MultiSelect:
     - Fixed duplicate add selected item when action performed is invoked on initial add
 
+### Changed
+
+- FlatLaf: update to `v3.7`
+
 ## [1.0.0] - 2025-10-30
 
 - Initial release
