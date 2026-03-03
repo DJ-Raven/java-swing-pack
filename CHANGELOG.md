@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.1-SNAPSHOT]
+## [1.0.1] - 2026-03-03
 
 ### Fixed bugs
 

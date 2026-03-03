@@ -13,5 +13,5 @@ Follow these steps to add **Swing Pack** to your project.
 <dependency>
     <groupId>com.swingflatpack</groupId>
     <artifactId>swing-pack</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>

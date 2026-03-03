@@ -14,7 +14,7 @@ import java.awt.*;
 
 public abstract class BaseFrame extends JFrame {
 
-    public static final String TEST_VERSION = "1.0.0";
+    public static final String TEST_VERSION = "1.0.1";
 
     public BaseFrame(String title) {
         setTitle(title);
