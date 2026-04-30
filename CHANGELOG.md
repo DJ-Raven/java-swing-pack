@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.0-SNAPSHOT]
+
+New features and improvements
+
+- Add new JDateTimeField component. (PR #2)
+
+### Changed
+
+- FlatLaf: update to `v3.7.1`
+
 ## [1.0.1] - 2026-03-03
 
 ### Fixed bugs
