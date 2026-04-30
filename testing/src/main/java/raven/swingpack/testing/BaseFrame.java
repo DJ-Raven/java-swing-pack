@@ -3,6 +3,7 @@ package raven.swingpack.testing;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.fonts.roboto.FlatRobotoFont;
+import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.UIScale;
 import net.miginfocom.swing.MigLayout;
 import raven.swingpack.testing.utils.MemoryBar;
@@ -23,7 +24,7 @@ public abstract class BaseFrame extends JFrame {
         setSize(UIScale.scale(new Dimension(1000, 600)));
         setLocationRelativeTo(null);
 
-        add(createComponent());
+        add(createComponent(), "gapx 10 n");
         add(new PanelThemes(), "gap 4 4 4 4");
         add(new JSeparator(), "height 2,span 2");
         add(createFooter(), "span 2");
@@ -68,6 +69,6 @@ public abstract class BaseFrame extends JFrame {
     protected static void installLaf() {
         FlatRobotoFont.install();
         FlatDarculaLaf.setup();
-        UIManager.put("defaultFont", new Font(FlatRobotoFont.FAMILY, Font.PLAIN, 13));
+        UIManager.put("defaultFont", FontUtils.getCompositeFont(FlatRobotoFont.FAMILY, Font.PLAIN, 13));
     }
 }
