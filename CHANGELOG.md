@@ -1,10 +1,10 @@
 # Changelog
 
-## [1.1.0-SNAPSHOT]
+## [1.1.0] - 2026-06-11
 
 New features and improvements
 
-- Add new JDateTimeField component. (PR #2)
+- Add a new JDateTimeField component. (PR #2)
 
 ### Changed
 
