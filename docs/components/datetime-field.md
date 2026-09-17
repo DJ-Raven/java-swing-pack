@@ -1,52 +1,46 @@
 # DateTime Field
 
-### Overview
-
-The `JDateTimeField` component provides a modern and flexible way to input and edit date-time values in Swing
-applications.
-It supports validation, customizable placeholders, and flexible date-time formatting.
+`JDateTimeField` provides a modern, flexible way to input and edit date-time values in Swing applications. It
+supports validation, customizable placeholders, and flexible date-time formatting.
 
 ![DateTime Field Example](../images/datetime-field.jpg)
 
-### Project Structure
+## Features
 
-``` text
-.
-└── raven/
-    └── swingpack/
-        ├── datetime/
-        │   ├── event/
-        │   │   ├── DateTimeSelectionListener.java
-        │   │   └── InputChangeListener.java
-        │   ├── validation/
-        │   │   ├── DateTimeValidator.java
-        │   │   └── ValidationResult.java
-        │   ├── DateTimeItemRenderer.java
-        │   ├── DefaultDateTimeItemRenderer.java
-        │   ├── DateTimeModel.java
-        │   ├── DateTimePatternParser.java
-        │   └── ...
-        └── JDateTimeField.java
-```
+- Segment-based editing driven by a configurable date-time `pattern`
+- Pluggable validation with error/warning/success states and an optional popup
+- Custom formatters for both values and placeholders per segment
+- Three commit modes for handling invalid input while typing or on focus loss
 
-### Example
-
-#### Create the datetime field
+## Quick Start
 
 ``` java
-// initial
 JDateTimeField dateTimeField = new JDateTimeField();
 
-// initial with datetime
+dateTimeField.addDateTimeSelectionListener(new DateTimeSelectionListener() {
+    @Override
+    public void dateTimeSelected(DateTimeSelectionEvent event) {
+        System.out.println("Datetime changed: " + dateTimeField.getSelectedDateTime());
+    }
+});
+```
+
+## Usage
+
+### Creating a datetime field
+
+``` java
+// default
+JDateTimeField dateTimeField = new JDateTimeField();
+
+// with an initial datetime
 JDateTimeField dateTimeField = new JDateTimeField(LocalDateTime dateTime);
 
-// initial with model
+// with a custom model
 JDateTimeField dateTimeField = new JDateTimeField(model);
 ```
 
----
-
-#### Create event datetime selection listener
+### Listening for selection changes
 
 ``` java
 dateTimeField.addDateTimeSelectionListener(new DateTimeSelectionListener() {
@@ -57,9 +51,7 @@ dateTimeField.addDateTimeSelectionListener(new DateTimeSelectionListener() {
 });
 ```
 
----
-
-#### Create validator
+### Adding a validator
 
 ``` java
 dateTimeField.setValidator(new DateTimeValidator() {
@@ -78,14 +70,10 @@ dateTimeField.setValidator(new DateTimeValidator() {
 });
 ```
 
----
+### Custom value formatter
 
-#### Custom Value formatter
-
-*Allows overriding how each date-time segment is displayed.*
-
-*For example, with the pattern `dd-MM-yyyy`, the default output is `25-04-2026`.*</br>
-*You can display the month as a full name when it is not selected, e.g. `25-April-2026`.*
+Overrides how each date-time segment is displayed. For example, with the pattern `dd-MM-yyyy` the default output is
+`25-04-2026` — you can display the month as a full name when it isn't selected, e.g. `25-April-2026`.
 
 ``` java
 dateTimeField.setValueFormatter(context -> {
@@ -100,14 +88,10 @@ dateTimeField.setValueFormatter(context -> {
 });
 ```
 
----
+### Custom placeholder formatter
 
-#### Custom Placeholder formatter
-
-*Allows overriding how placeholder text is displayed for each date-time segment.*
-
-*For example, you can replace default placeholders with custom labels like `Day`, `Month`, and `Year`, and use `--` for
-time segments.*
+Overrides how placeholder text is displayed for each date-time segment — for example, replacing the defaults with
+labels like `Day`, `Month`, and `Year`, and `--` for time segments.
 
 ``` java
 dateTimeField.setPlaceholderFormatter(context -> {
@@ -125,11 +109,9 @@ dateTimeField.setPlaceholderFormatter(context -> {
 });
 ```
 
----
+### Commit mode
 
-#### Commit Mode
-
-Define how the component handles invalid date/time input during editing and when focus is lost.
+Defines how the component handles invalid date/time input during editing and when focus is lost.
 
 ``` java
 public enum CommitMode {
@@ -139,19 +121,17 @@ public enum CommitMode {
 }
 ```
 
-| Mode                         | Invalid While Typing                                                | Invalid On Focus Lost                                 |
-|------------------------------|---------------------------------------------------------------------|-------------------------------------------------------|
-| `NULL_ON_INVALID`            | Value is set to `null`                                              | Field is cleared and placeholder is shown             |
-| `REVERT_ON_INVALID`          | Ignored (value does not change)                                     | Field reverts to the last valid value                 |
-| `TEMP_ON_INVALID`  (default) | - Displayed as the current input<br/> - Value is set to `null`<br/> | Still displays the current input (value stays `null`) |
+| Mode                        | Invalid While Typing                                   | Invalid On Focus Lost                                 |
+|-----------------------------|--------------------------------------------------------|-------------------------------------------------------|
+| `NULL_ON_INVALID`           | Value is set to `null`                                 | Field is cleared and placeholder is shown             |
+| `REVERT_ON_INVALID`         | Ignored (value does not change)                        | Field reverts to the last valid value                 |
+| `TEMP_ON_INVALID` (default) | Displayed as the current input; value is set to `null` | Still displays the current input (value stays `null`) |
 
-##### Notes
+Notes:
 
 - In `TEMP_ON_INVALID`, the displayed text may be invalid while the internal value remains `null`.
 - Use `getSelectedDateTime()` to retrieve the parsed value (returns `null` if input is invalid).
 - Use `isValidationValid()` to check whether the current input is valid before processing.
-
-##### Example
 
 ``` java
 if (dateTimeField.isValidationValid()) {
@@ -160,29 +140,29 @@ if (dateTimeField.isValidationValid()) {
 }
 ```
 
----
+## API Reference
 
 ### Properties
 
-| Property                 | Default Value                 | Description                                                                                                                                               |
-|--------------------------|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model`                  | `DateTimeModel`               | The data model that manages the date-time value and state.                                                                                                |
-| `itemRenderer`           | `DefaultDateTimeItemRenderer` | Custom renderer used to paint each date-time item.                                                                                                        |
-| `pattern`                | `"DD/MM/yyyy hh:mm a"`        | Defines the date-time format pattern used for input and display.                                                                                          |
-| `commitMode`             | `CommitMode.TEMP_ON_INVALID`  | Controls how invalid or incomplete input is handled:<br/>`CommitMode.NULL_ON_INVALID`<br/>`CommitMode.REVERT_ON_INVALID`<br/>`CommitMode.TEMP_ON_INVALID` |
-| `placeholderCaseStyle`   | `CaseStyle.ORIGINAL`          | Determines the case style of placeholder text:<br/> `CaseStyle.ORIGINAL`<br/>`CaseStyle.LOWER`<br/>`CaseStyle.UPPER`                                      |
-| `selectionStyle`         | `SelectionStyle.BACKGROUND`   | Determines the selection style:<br/>`SelectionStyle.BACKGROUND`<br/>`SelectionStyle.DASHED`<br/>`SelectionStyle.DASHED_WITH_BACKGROUND`                   |
-| `placeholderFormatter`   | `null`                        | Custom formatter for rendering placeholder text.                                                                                                          |
-| `valueFormatter`         | `null`                        | Custom formatter for rendering the date-time value.                                                                                                       |
-| `validator`              | `null`                        | Validator used to check the validity of the input value.                                                                                                  |
-| `showClearButton`        | `false`                       | Determines whether a clear (reset) button is displayed.                                                                                                   |
-| `validationPopupEnabled` | `true`                        | Enables a popup to display validation messages.                                                                                                           |
-| `spaceWidth`             | `0`                           | Defines the width of the space character (`' '`) between date-time segments. Use `-1` for default spacing, or set a custom width (e.g., 5).               |
-| `itemGap`                | `1`                           | Sets the gap (in pixels) between each segment.                                                                                                            |
-| `itemArc`                | `5`                           | Defines the arc (corner radius) for segment rendering. Use `-1` to apply the default laf theme arc.                                                       |
-| `validationErrorIcon`    | `null`                        | Icon displayed when validation fails. Uses default icon when `null`.                                                                                      |
-| `validationWarningIcon`  | `null`                        | Icon displayed for validation warnings. Uses default icon when `null`.                                                                                    |
-| `validationSuccessIcon`  | `null`                        | Icon displayed when validation is successful. Uses default icon when `null`.                                                                              |
+| Property                 | Default Value                 | Description                                                                                                                                 |
+|--------------------------|-------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`                  | `DateTimeModel`               | The data model that manages the date-time value and state.                                                                                  |
+| `itemRenderer`           | `DefaultDateTimeItemRenderer` | Custom renderer used to paint each date-time item.                                                                                          |
+| `pattern`                | `"DD/MM/yyyy hh:mm a"`        | Defines the date-time format pattern used for input and display.                                                                            |
+| `commitMode`             | `CommitMode.TEMP_ON_INVALID`  | Controls how invalid or incomplete input is handled: `NULL_ON_INVALID`, `REVERT_ON_INVALID`, `TEMP_ON_INVALID`.                             |
+| `placeholderCaseStyle`   | `CaseStyle.ORIGINAL`          | Determines the case style of placeholder text: `ORIGINAL`, `LOWER`, `UPPER`.                                                                |
+| `selectionStyle`         | `SelectionStyle.BACKGROUND`   | Determines the selection style: `BACKGROUND`, `DASHED`, `DASHED_WITH_BACKGROUND`.                                                           |
+| `placeholderFormatter`   | `null`                        | Custom formatter for rendering placeholder text.                                                                                            |
+| `valueFormatter`         | `null`                        | Custom formatter for rendering the date-time value.                                                                                         |
+| `validator`              | `null`                        | Validator used to check the validity of the input value.                                                                                    |
+| `showClearButton`        | `false`                       | Determines whether a clear (reset) button is displayed.                                                                                     |
+| `validationPopupEnabled` | `true`                        | Enables a popup to display validation messages.                                                                                             |
+| `spaceWidth`             | `0`                           | Defines the width of the space character (`' '`) between date-time segments. Use `-1` for default spacing, or set a custom width (e.g., 5). |
+| `itemGap`                | `1`                           | Sets the gap (in pixels) between each segment.                                                                                              |
+| `itemArc`                | `5`                           | Defines the arc (corner radius) for segment rendering. Use `-1` to apply the default laf theme arc.                                         |
+| `validationErrorIcon`    | `null`                        | Icon displayed when validation fails. Uses default icon when `null`.                                                                        |
+| `validationWarningIcon`  | `null`                        | Icon displayed for validation warnings. Uses default icon when `null`.                                                                      |
+| `validationSuccessIcon`  | `null`                        | Icon displayed when validation is successful. Uses default icon when `null`.                                                                |
 
 ### Methods
 
@@ -206,3 +186,24 @@ if (dateTimeField.isValidationValid()) {
 | `clearValidationField()`                                              |                    | Clears validation state and resets the result to `null`.                   |
 | `addDateTimeSelectionListener(DateTimeSelectionListener listener)`    |                    | Adds a listener to receive date-time selection events.                     |
 | `removeDateTimeSelectionListener(DateTimeSelectionListener listener)` |                    | Removes a previously added date-time selection listener.                   |
+
+## Project Structure
+
+```text
+.
+└── raven/
+    └── swingpack/
+        ├── datetime/
+        │   ├── event/
+        │   │   ├── DateTimeSelectionListener.java
+        │   │   └── InputChangeListener.java
+        │   ├── validation/
+        │   │   ├── DateTimeValidator.java
+        │   │   └── ValidationResult.java
+        │   ├── DateTimeItemRenderer.java
+        │   ├── DefaultDateTimeItemRenderer.java
+        │   ├── DateTimeModel.java
+        │   ├── DateTimePatternParser.java
+        │   └── ...
+        └── JDateTimeField.java
+```

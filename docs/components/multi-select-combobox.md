@@ -1,38 +1,28 @@
 # Multi-Select ComboBox
 
-### Overview
-
-The `JMultiSelectComboBox` is a modern Swing component that allows users to select multiple items in a single combo
-box.  
-It supports wrapping, scrolling, and right-to-left (RTL) layouts.
+`JMultiSelectComboBox` is a modern Swing combo box that lets users select multiple items at once. It supports
+wrapping, scrolling, and right-to-left (RTL) layouts.
 
 ![Multi-Select ComboBox Example](../images/multi-select.jpg)
 
-### Project Structure
+## Features
 
-``` ext
-.
-└── raven/
-    └── swingpack/
-        ├── multiselect/
-        │   ├── event/
-        │   │   ├── MultiSelectAdapter.java
-        │   │   └── MultiSelectListener.java
-        │   ├── icons/
-        │   │   ├── AbstractItemActionIcon.java
-        │   │   └── ItemActionIcon.java
-        │   ├── MultiSelectItemEditable.java
-        │   ├── MultiSelectItemRenderer.java
-        │   ├── MultiSelectModel.java
-        │   └── ...
-        ├── util/
-        │   └── SwingPackUtils.java
-        └── JMultiSelectComboBox.java
+- Select multiple items in a single combo box
+- Wraps overflowed items or scrolls through them (`AUTO_WRAP` / `WRAP_SCROLL`)
+- An overflow popup for items that don't fit the visible area
+- Control which items can be added or removed via `MultiSelectItemEditable`
+
+## Quick Start
+
+```java
+String[] items = {"Blueberry", "Kiwi", "Mango"};
+ComboBoxModel<String> model = new DefaultComboBoxModel<>(items);
+JMultiSelectComboBox<String> multiSelect = new JMultiSelectComboBox<>(model);
 ```
 
-### Example
+## Usage
 
-#### Create with model
+### Creating with a model
 
 ``` java
 String[] items = {"Blueberry", "Kiwi", "Mango"};
@@ -40,9 +30,7 @@ ComboBoxModel<String> model = new DefaultComboBoxModel<>(items);
 JMultiSelectComboBox<String> multiSelect = new JMultiSelectComboBox<>(model);
 ```
 
----
-
-#### Create empty and add items manually
+### Creating empty and adding items manually
 
 ``` java
 JMultiSelectComboBox<String> multiSelect = new JMultiSelectComboBox<>();
@@ -53,40 +41,32 @@ multiSelect.addItem("Blueberry");
 multiSelect.addItem("Kiwi",true);
 ```
 
----
-
-#### Item editable
-
-*Control which items can be added or removed by customizing the item edit behavior.*
+### Controlling which items can be added or removed
 
 ``` java
 multiSelect.setItemEditable(new MultiSelectItemEditable() {
     @Override
-    public boolean isItemAddable(Object item) {
+    public boolean isItemAddable (Object item){
         // allow to add Blueberry and Kiwi
         return item.equals("Blueberry") || item.equals("Kiwi");
     }
 
     @Override
-    public boolean isItemRemovable(Object item) {
+    public boolean isItemRemovable (Object item){
         // allow to remove all except Blueberry
         return !item.equals("Blueberry");
     }
 });
 ```
 
----
-
-#### Item container background
-
-*Change the background color using FlatLaf style properties.*
+### Styling the item container background
 
 ``` java
-multiSelect.putClientProperty(FlatClientProperties.STYLE, "" +
+multiSelect.putClientProperty(FlatClientProperties.STYLE, ""+
         "editableBackground:#DEDEDE;");
 ```
 
----
+## API Reference
 
 ### Properties
 
@@ -94,7 +74,7 @@ multiSelect.putClientProperty(FlatClientProperties.STYLE, "" +
 |-------------------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `itemEditable`          | `null`                           | Controls which items can be added or removed.                                                                                                                                  |
 | `itemRenderer`          | `DefaultMultiSelectItemRenderer` | Custom renderer for displaying each selected item.                                                                                                                             |
-| `noVisualPadding`       | `false`                          | Control item renderer`s layout to ignore the focus border.                                                                                                                     |
+| `noVisualPadding`       | `false`                          | Controls the item renderer's layout to ignore the focus border.                                                                                                                |
 | `showItemRemovableIcon` | `true`                           | Determines whether the remove (x) icon appears on selected items.                                                                                                              |
 | `itemRemovableTextGap`  | `3`                              | Gap (in pixels) between the removable icon and the item text.                                                                                                                  |
 | `itemGap`               | `5`                              | Horizontal and vertical space between each selected item.                                                                                                                      |
@@ -131,3 +111,25 @@ multiSelect.putClientProperty(FlatClientProperties.STYLE, "" +
 | `showOverflowPopup(Component com, int x, int y)`    |              | Displays the overflow popup at a custom location relative to the given component. |
 | `addEventListener(MultiSelectListener listener)`    |              | Adds a listener to handle selection, removal, and overflow events.                |
 | `removeEventListener(MultiSelectListener listener)` |              | Removes a previously added listener.                                              |
+
+## Project Structure
+
+```text
+.
+└── raven/
+    └── swingpack/
+        ├── multiselect/
+        │   ├── event/
+        │   │   ├── MultiSelectAdapter.java
+        │   │   └── MultiSelectListener.java
+        │   ├── icons/
+        │   │   ├── AbstractItemActionIcon.java
+        │   │   └── ItemActionIcon.java
+        │   ├── MultiSelectItemEditable.java
+        │   ├── MultiSelectItemRenderer.java
+        │   ├── MultiSelectModel.java
+        │   └── ...
+        ├── util/
+        │   └── SwingPackUtils.java
+        └── JMultiSelectComboBox.java
+```

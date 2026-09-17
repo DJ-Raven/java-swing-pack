@@ -1,85 +1,76 @@
 # Pagination
 
-### Overview
+`JPagination` is a simple, flexible way to navigate through multiple pages of content in Swing applications.
 
-The `JPagination` component provides a simple and flexible way to navigate through multiple pages of content in Swing
-applications.
+![Pagination Example](../images/pagination.jpg)
 
-![Multi-Select ComboBox Example](../images/pagination.jpg)
+## Features
 
-### Project Structure
+- Configurable maximum number of visible page buttons
+- Optional `Next` / `Previous` navigation buttons, with optional loop navigation
+- Pluggable item renderer and navigation icons
+- A `PaginationModel` you can observe or drive independently of the UI
 
-``` text
-.
-└── raven/
-    └── swingpack/
-        ├── pagination/
-        │   ├── event/
-        │   │   └── PaginationModelListener.java
-        │   ├── icons/
-        │   │   └── PageArrowIcon.java
-        │   ├── Page.java
-        │   ├── PaginationItemRenderer.java
-        │   ├── PaginationModel.java
-        │   └── ...
-        ├── util/
-        │   └── SwingPackUtils.java
-        └── JPagination.java
-```
-
-### Example
-
-#### Create the pagination
+## Quick Start
 
 ``` java
-// initial with default
-JPagination pagination = new JPagination();
+JPagination pagination = new JPagination(maxItem, selectedPage, pageSize);
 
-// initial with maxItem
-JPagination pagination = new JPagination(maxItem);
-
-// initial with selectedPage and pageSize
-JPagination pagination = new JPagination(selectedPage, pageSize);
-
-// initial with maxItem, selectedPage and pageSize
-JPagination pagination = new JPagination(int maxItem, int selectedPage, int pageSize);
-
-// initial with pagination model
-JPagination pagination = new JPagination(model);
-```
-
----
-
-#### Create event pagination changed listener
-
-``` java
 pagination.addChangeListener(new ChangeListener() {
     @Override
-    public void stateChanged(ChangeEvent changeEvent) {
+    public void stateChanged (ChangeEvent changeEvent){
         System.out.println("Page changed: " + pagination.getSelectedPage());
     }
 });
 ```
 
----
+## Usage
 
-#### Custom item renderer
+### Creating a pagination
+
+``` java
+// default
+JPagination pagination = new JPagination();
+
+// with a maximum number of visible page buttons
+JPagination pagination = new JPagination(maxItem);
+
+// with a selected page and a page size
+JPagination pagination = new JPagination(selectedPage, pageSize);
+
+// with maxItem, selectedPage and pageSize
+JPagination pagination = new JPagination(maxItem, selectedPage, pageSize);
+
+// with a custom pagination model
+JPagination pagination = new JPagination(model);
+```
+
+### Listening for page changes
+
+``` java
+pagination.addChangeListener(new ChangeListener() {
+    @Override
+    public void stateChanged (ChangeEvent changeEvent){
+        System.out.println("Page changed: " + pagination.getSelectedPage());
+    }
+});
+```
+
+### Customizing the item renderer
 
 ``` java
 pagination.setItemRenderer(new DefaultPaginationItemRenderer() {
     @Override
-    public Component getPaginationItemRendererComponent(JPagination pagination, Page page, boolean isSelected, boolean isPressed, boolean hasFocus, int index) {
+    public Component getPaginationItemRendererComponent (JPagination pagination, Page page,boolean isSelected,
+    boolean isPressed, boolean hasFocus, int index){
         super.getPaginationItemRendererComponent(pagination, page, isSelected, isPressed, hasFocus, index);
-        FlatLafStyleUtils.appendStyle(this, "" +
-                "arc:999;");
+        FlatLafStyleUtils.appendStyle(this, "arc:999;");
         return this;
     }
 });
 ```
 
----
-
-#### Control item selected value
+### Controlling the selected page
 
 ``` java
 pagination.setPageRange(selectedPage, pageSize);
@@ -91,14 +82,12 @@ pagination.hasPrevious();
 pagination.hasNext();
 ```
 
----
-
-#### Example using model listener
+### Listening to the model directly
 
 ``` java
 pagination.getModel().addPaginationModelListener(new PaginationModelListener() {
     @Override
-    public void paginationModelChanged(PaginationModelEvent event) {
+    public void paginationModelChanged (PaginationModelEvent event){
         if (event.isPageChanged()) {
             System.out.println("old page: " + event.getOldPage());
             System.out.println("new page: " + event.getNewPage());
@@ -107,7 +96,7 @@ pagination.getModel().addPaginationModelListener(new PaginationModelListener() {
 });
 ```
 
----
+## API Reference
 
 ### Properties
 
@@ -119,7 +108,7 @@ pagination.getModel().addPaginationModelListener(new PaginationModelListener() {
 | `showNavigationButton`   | `true`                          | Determines whether the navigation buttons (`Next` and `Previous`) are shown.                  |
 | `alwaysEnableNavigation` | `false`                         | Keeps the navigation buttons enabled even when there are no next or previous pages available. |
 | `hideWhenNoPage`         | `true`                          | Hides the pagination component when there are no pages available.                             |
-| `noVisualPadding`        | `false`                         | Control item renderer`s layout to ignore the focus border.                                    |
+| `noVisualPadding`        | `false`                         | Controls the item renderer's layout to ignore the focus border.                               |
 | `loop`                   | `false`                         | Enables looping navigation — going next from the last page jumps back to the first page.      |
 | `itemSize`               | `Dimension(28, 28)`             | Defines the size of each pagination button.                                                   |
 | `itemGap`                | `7`                             | Sets the gap (in pixels) between pagination items.                                            |
@@ -147,3 +136,23 @@ pagination.getModel().addPaginationModelListener(new PaginationModelListener() {
 | `hasNext()`                                     | `boolean`    | Returns `true` if a next page is available.          |
 | `addChangeListener(ChangeListener listener)`    |              | Adds a listener to receive pagination change events. |
 | `removeChangeListener(ChangeListener listener)` |              | Removes a previously added change listener.          |
+
+## Project Structure
+
+```text
+.
+└── raven/
+    └── swingpack/
+        ├── pagination/
+        │   ├── event/
+        │   │   └── PaginationModelListener.java
+        │   ├── icons/
+        │   │   └── PageArrowIcon.java
+        │   ├── Page.java
+        │   ├── PaginationItemRenderer.java
+        │   ├── PaginationModel.java
+        │   └── ...
+        ├── util/
+        │   └── SwingPackUtils.java
+        └── JPagination.java
+```

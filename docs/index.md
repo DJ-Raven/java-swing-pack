@@ -1,4 +1,4 @@
-# Swing Pack
+# Swing Pack Guide
 
 **Swing Pack** is a modern Swing component library for Java desktop development.
 It provides beautiful, customizable, and ready-to-use UI components with a flat, modern design build with **FlatLaf**.
@@ -7,7 +7,7 @@ It provides beautiful, customizable, and ready-to-use UI components with a flat,
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dj-raven/swing-pack?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.dj-raven/swing-pack)
 
-Add the dependency
+Add the dependency:
 
 ``` xml
 <dependency>
@@ -32,7 +32,7 @@ from [Sonatype Central](https://central.sonatype.com/service/rest/repository/bro
 </repositories>
 ```
 
-Add the snapshot version
+Add the snapshot version:
 
 ``` xml
 <dependency>
@@ -44,6 +44,8 @@ Add the snapshot version
 
 ## Components
 
-- [Pagination](components/pagination.md)
-- [Multi-Select ComboBox](components/multi-select-combobox.md)
-- [DateTime Field](components/datetime-field.md)
+| Component | Description |
+|---|---|
+| [Pagination](components/pagination.md) | Navigate through multiple pages of content. |
+| [Multi-Select ComboBox](components/multi-select-combobox.md) | A combo box that supports selecting multiple items. |
+| [DateTime Field](components/datetime-field.md) | An input field for picking dates and times. |
